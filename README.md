@@ -63,3 +63,4 @@ Both demo buttons are also available directly on the Login screen.
 ## Deferred to later phases (per Sir's scope call)
 Agent, Agency, and Super Admin roles — not in this build. Loan/Insurance eligibility logic, EMI calculation, and real device dispatch are also out of scope — Phase 1 only sends the request to Admin.
 "# Tiru-Pay-Backend" 
+"# Tiru-Pay-Backend" 
