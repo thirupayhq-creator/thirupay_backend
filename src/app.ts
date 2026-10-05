@@ -2,31 +2,30 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 
-import authRoutes from "./routes/auth.routes";
-import merchantRoutes from "./routes/merchant.routes";
-import kycRoutes from "./routes/kyc.routes";
-import paymentRoutes from "./routes/payment.routes";
-import refundRoutes from "./routes/refund.routes";
-import payoutRoutes from "./routes/payout.routes";
-import webhookRoutes from "./routes/webhook.routes";
+// Vertical Slice Routes
+import authRoutes from "./modules/auth/auth.routes";
+import merchantRoutes from "./modules/merchant/merchant.routes";
+import kycRoutes from "./modules/kyc/kyc.routes";
+import paymentRoutes from "./modules/payment/payment.routes";
+import refundRoutes from "./modules/refund/refund.routes";
+import payoutRoutes from "./modules/payout/payout.routes";
+import webhookRoutes from "./modules/webhook/webhook.routes";
 
-import { errorMiddleware } from "./middleware/error.middleware";
+// Core Infrastructure
+import { errorMiddleware } from "./core/middleware/error.middleware";
+import { checkDatabaseHealth } from "./core/config/database";
 
 const app = express();
 
 /**
  * ==========================================
- * SECURITY
+ * SECURITY & HEADERS
  * ==========================================
  */
-
 app.disable("x-powered-by");
-
 app.use(
   helmet({
-    crossOriginResourcePolicy: {
-      policy: "cross-origin",
-    },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 
@@ -35,7 +34,6 @@ app.use(
  * CORS
  * ==========================================
  */
-
 app.use(
   cors({
     origin: true,
@@ -45,24 +43,17 @@ app.use(
 
 /**
  * ==========================================
- * JSON BODY PARSER
+ * BODY PARSERS
+ *
+ * Captures raw body buffer in req.rawBody
+ * for Cashfree Webhook HMAC-SHA256 signature verification.
  * ==========================================
- *
- * Cashfree webhook signature verification
- * requires the ORIGINAL request body.
- *
- * We save the raw body in req.rawBody
- * before Express parses the JSON.
  */
-
 app.use(
   express.json({
-    limit: "1mb",
-
+    limit: "2mb",
     verify: (
-      req: express.Request & {
-        rawBody?: Buffer;
-      },
+      req: express.Request & { rawBody?: Buffer },
       _res,
       buffer
     ) => {
@@ -71,140 +62,91 @@ app.use(
   })
 );
 
-/**
- * ==========================================
- * URL ENCODED BODY
- * ==========================================
- */
-
 app.use(
   express.urlencoded({
     extended: true,
-    limit: "1mb",
+    limit: "2mb",
   })
 );
 
 /**
  * ==========================================
- * ROOT ROUTE
+ * ROOT & HEALTH CHECK ROUTES
  * ==========================================
  */
-
 app.get("/", (_req, res) => {
   res.status(200).json({
     success: true,
     message: "TIRU PAY Backend API is running",
     service: "TIRU PAY",
-    version: "1.0.0",
+    version: "2.0.0",
+    architecture: "Vertical Slice Architecture",
   });
 });
 
-/**
- * ==========================================
- * HEALTH CHECK
- * ==========================================
- */
+app.get("/health", async (_req, res) => {
+  const dbHealth = await checkDatabaseHealth();
+  const isHealthy = dbHealth.status === "UP";
 
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    success: true,
+  res.status(isHealthy ? 200 : 503).json({
+    success: isHealthy,
     service: "TIRU PAY",
-    status: "UP",
+    status: isHealthy ? "UP" : "DEGRADED",
     timestamp: new Date().toISOString(),
+    database: dbHealth,
+  });
+});
+
+app.get("/api/v1/health", async (_req, res) => {
+  const dbHealth = await checkDatabaseHealth();
+  const isHealthy = dbHealth.status === "UP";
+
+  res.status(isHealthy ? 200 : 503).json({
+    success: isHealthy,
+    status: isHealthy ? "HEALTHY" : "UNHEALTHY",
+    timestamp: new Date().toISOString(),
+    checks: {
+      database: dbHealth,
+    },
   });
 });
 
 /**
  * ==========================================
- * FRONTEND → BACKEND TEST
+ * VERTICAL SLICE API ROUTES
  * ==========================================
  */
 
-app.get("/api/test", (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Frontend connected to backend!",
-  });
-});
+// Authentication Slice (Register, Login, Me)
+app.use("/api/v1/auth", authRoutes);
+
+// Merchant Slice (Onboarding, Profile, Admin list & status)
+app.use("/api/v1/merchants", merchantRoutes);
+
+// KYC Slice (Submit, Status, Admin verify)
+app.use("/api/v1/kyc", kycRoutes);
+
+// Payment Slice (Create Cashfree order, Verify, Get, List)
+app.use("/api/v1/payments", paymentRoutes);
+
+// Refund Slice (Create refund, Status, List)
+app.use("/api/v1", refundRoutes);
+
+// Payout Slice (Initiate payout, Status, List)
+app.use("/api/v1/payouts", payoutRoutes);
+
+// Webhook Slice (Cashfree webhook verification & event processing)
+app.use("/api/v1/webhooks", webhookRoutes);
 
 /**
  * ==========================================
- * API ROUTES
+ * 404 NOT FOUND HANDLER
  * ==========================================
  */
-
-/**
- * Authentication
- */
-app.use(
-  "/api/v1/auth",
-  authRoutes
-);
-
-/**
- * Merchant
- */
-app.use(
-  "/api/v1/merchants",
-  merchantRoutes
-);
-
-/**
- * KYC
- */
-app.use(
-  "/api/v1/kyc",
-  kycRoutes
-);
-
-/**
- * Payments
- */
-app.use(
-  "/api/v1/payments",
-  paymentRoutes
-);
-
-/**
- * Refunds
- */
-app.use(
-  "/api/v1",
-  refundRoutes
-);
-
-/**
- * Payouts
- */
-app.use(
-  "/api/v1/payouts",
-  payoutRoutes
-);
-
-/**
- * Cashfree Webhooks
- *
- * Full endpoint:
- * POST /api/v1/webhooks/payment
- */
-app.use(
-  "/api/v1/webhooks",
-  webhookRoutes
-);
-
-/**
- * ==========================================
- * 404 HANDLER
- * ==========================================
- *
- * IMPORTANT:
- * This must remain AFTER all API routes.
- */
-
-app.use((_req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "Route not found",
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
   });
 });
 
@@ -213,15 +155,7 @@ app.use((_req, res) => {
  * GLOBAL ERROR HANDLER
  * ==========================================
  */
-
 app.use(errorMiddleware);
 
-/**
- * ==========================================
- * EXPORT
- * ==========================================
- */
-
 export { app };
-
 export default app;

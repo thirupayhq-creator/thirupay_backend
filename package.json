@@ -12,9 +12,18 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "db:test": "tsx scripts/test-db-connection.ts",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "cashfree:test": "tsx scripts/test-cashfree.ts"
   },
   "dependencies": {
+    "@neon/config": "^1.8.3",
+    "@neon/env": "^1.5.0",
     "@prisma/client": "^6.19.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -36,6 +45,7 @@
     "jest": "^30.0.5",
     "prisma": "^6.19.0",
     "supertest": "^7.1.4",
+    "ts-jest": "^29.4.14",
     "tsx": "^4.20.3",
     "typescript": "^5.9.3"
   },

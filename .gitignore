@@ -45,3 +45,6 @@ temp/
 
 # Generated files
 *.tsbuildinfo
+
+# Cloned Frontend Repository
+thirupay-com/
