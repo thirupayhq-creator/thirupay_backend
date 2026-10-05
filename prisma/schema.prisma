@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(MERCHANT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  merchant Merchant?
+
+  @@index([email])
+}
+
+model Merchant {
+  id           String         @id @default(cuid())
+  userId       String         @unique
+  businessName String
+  businessType String?
+  phone        String?
+  status       MerchantStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  IdempotencyKey IdempotencyKey[]
+  kyc            KycVerification?
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments       Payment[]
+  payouts        Payout[]
+  refunds        Refund[]
+
+  @@index([status])
+}
+
+model Payment {
+  id                String         @id @default(cuid())
+  merchantId        String
+  orderId           String
+  amount            Decimal        @db.Decimal(18, 2)
+  currency          String         @default("INR")
+  status            PaymentStatus  @default(CREATED)
+  paymentMethod     PaymentMethod?
+  provider          String?
+  providerPaymentId String?
+  providerOrderId   String?
+
+  // Cashfree fields
+  cashfreeOrderId  String?
+  paymentSessionId String?
+
+  description String?
+  metadata    Json?
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  merchant      Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  refunds       Refund[]
+  webhookEvents WebhookEvent[]
+
+  @@unique([merchantId, orderId])
+  @@index([merchantId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([providerPaymentId])
+  @@index([cashfreeOrderId])
+}
+
+model Refund {
+  id               String       @id @default(cuid())
+  merchantId       String
+  paymentId        String
+  amount           Decimal      @db.Decimal(18, 2)
+  currency         String       @default("INR")
+  status           RefundStatus @default(CREATED)
+  provider         String?
+  providerRefundId String?
+  reason           String?
+  metadata         Json?
+  processedAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  payment  Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([merchantId])
+  @@index([providerRefundId])
+  @@index([status])
+}
+
+model Payout {
+  id               String       @id @default(cuid())
+  merchantId       String
+  amount           Decimal      @db.Decimal(18, 2)
+  currency         String       @default("INR")
+  beneficiaryId    String
+  status           PayoutStatus @default(CREATED)
+  provider         String?
+  providerPayoutId String?
+  failureReason    String?
+  metadata         Json?
+  processedAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([merchantId])
+  @@index([providerPayoutId])
+  @@index([status])
+}
+
+model WebhookEvent {
+  id           String        @id @default(cuid())
+  eventId      String        @unique
+  eventType    String
+  provider     String
+  paymentId    String?
+  status       WebhookStatus @default(RECEIVED)
+  signature    String?
+  payload      Json
+  processedAt  DateTime?
+  errorMessage String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([createdAt])
+  @@index([eventType])
+  @@index([paymentId])
+  @@index([provider])
+  @@index([status])
+}
+
+model IdempotencyKey {
+  id             String    @id @default(cuid())
+  key            String
+  merchantId     String
+  endpoint       String
+  requestHash    String?
+  responseStatus Int?
+  responseBody   Json?
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime?
+
+  Merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([merchantId, key, endpoint])
+  @@index([expiresAt])
+  @@index([merchantId])
+}
+
+model KycVerification {
+  id                String    @id
+  merchantId        String    @unique
+  status            KycStatus @default(PENDING)
+  provider          String?
+  providerReference String?
+  submittedAt       DateTime?
+  verifiedAt        DateTime?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+enum UserRole {
+  ADMIN
+  MERCHANT
+}
+
+enum MerchantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum KycStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NET_BANKING
+  WALLET
+  OTHER
+}
+
+enum RefundStatus {
+  CREATED
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum PayoutStatus {
+  CREATED
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}

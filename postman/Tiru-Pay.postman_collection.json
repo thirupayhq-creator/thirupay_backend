@@ -1,0 +1,385 @@
+{
+  "info": {
+    "_postman_id": "6f6f2e90-4c72-4d2a-9e0f-9c2d7a9e1001",
+    "name": "TIRU PAY - Payment Gateway MVP 1.0",
+    "description": "Complete TIRU PAY API testing collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "userEmail",
+      "value": ""
+    },
+    {
+      "key": "userPassword",
+      "value": "Password123"
+    },
+    {
+      "key": "paymentId",
+      "value": ""
+    },
+    {
+      "key": "payoutId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Health endpoint is working', function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('Service status is UP', function () {",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tiru Test Merchant\",\n  \"email\": \"merchant_{{$timestamp}}@example.com\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const email = `merchant_${Date.now()}@example.com`;",
+                  "pm.collectionVariables.set('userEmail', email);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Registration successful', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const token = json.token || (json.data && json.data.token);",
+                  "",
+                  "pm.test('JWT token received', function () {",
+                  "    pm.expect(token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "if (token) {",
+                  "    pm.collectionVariables.set('token', token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Merchant",
+      "item": [
+        {
+          "name": "Onboard Merchant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Tiru Store\",\n  \"businessType\": \"Retail\",\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchants/onboard"
+          }
+        },
+        {
+          "name": "Get Merchant Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/merchants/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - KYC",
+      "item": [
+        {
+          "name": "Submit KYC",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referenceId\": \"DEMO_KYC_{{$timestamp}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/kyc/submit"
+          }
+        },
+        {
+          "name": "KYC Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kyc/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "payment-{{$timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"ORDER_{{$timestamp}}\",\n  \"amount\": 1000,\n  \"currency\": \"INR\",\n  \"paymentMethod\": \"UPI\",\n  \"description\": \"Tiru Pay test payment\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Payment created', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const payment = json.data?.payment || json.data || json.payment;",
+                  "",
+                  "if (payment?.id) {",
+                  "    pm.collectionVariables.set('paymentId', payment.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Payment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}"
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}/verify"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Refund",
+      "item": [
+        {
+          "name": "Create Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500,\n  \"reason\": \"Customer requested refund\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}/refund"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Payout",
+      "item": [
+        {
+          "name": "Create Payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "payout-{{$timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 2000,\n  \"currency\": \"INR\",\n  \"beneficiaryId\": \"BENEFICIARY_001\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payouts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Webhook",
+      "item": [
+        {
+          "name": "Payment Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Razorpay-Signature",
+                "value": "GENERATE_WITH_YOUR_WEBHOOK_SECRET"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"evt_{{$timestamp}}\",\n  \"eventType\": \"payment.updated\",\n  \"paymentId\": \"{{paymentId}}\",\n  \"status\": \"SUCCESS\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/webhooks/payment"
+          }
+        }
+      ]
+    }
+  ]
+}

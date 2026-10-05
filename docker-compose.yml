@@ -1,0 +1,93 @@
+services:
+  # ==========================================
+  # TIRU PAY API
+  # ==========================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: tiru-pay-api
+
+    restart: unless-stopped
+
+    ports:
+      - "5000:5000"
+
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/tiru_pay
+
+      JWT_SECRET: ${JWT_SECRET:-tiru-pay-development-jwt-secret}
+
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-tiru-pay-development-webhook-secret}
+
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-MOCK}
+
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+
+      SMS_PROVIDER: ${SMS_PROVIDER:-MOCK}
+      KYC_PROVIDER: ${KYC_PROVIDER:-MOCK}
+
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - tiru-pay-network
+
+
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+
+    container_name: tiru-pay-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tiru_pay
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - tiru_pay_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d tiru_pay"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - tiru-pay-network
+
+
+# ==========================================
+# Persistent PostgreSQL Storage
+# ==========================================
+volumes:
+  tiru_pay_postgres_data:
+
+
+# ==========================================
+# Docker Network
+# ==========================================
+networks:
+  tiru-pay-network:
+    driver: bridge

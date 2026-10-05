@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+:root {
+  --gradient-brand: linear-gradient(135deg, #071D34, #0B2A4A 55%, #F2600A);
+  --gradient-soft: linear-gradient(180deg, #EAF1F8, #FFFFFF 65%);
+  --shadow-brand: 0 22px 55px -22px rgba(242, 96, 10, 0.45);
+  --shadow-soft: 0 14px 40px -18px rgba(11, 42, 74, 0.28);
+  --shadow-float: 0 30px 70px -28px rgba(11, 42, 74, 0.45);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: #ffffff;
+  color: #101C2C;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #9DB9DA; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(13, 27, 62, 0.08);
+}
+
+/* Brand style utilities — gradients, glow shadows, 3D tilt & float animation */
+.text-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-brand { background: var(--gradient-brand); }
+.bg-soft { background: var(--gradient-soft); }
+
+.shadow-brand { box-shadow: var(--shadow-brand); }
+.shadow-soft { box-shadow: var(--shadow-soft); }
+.shadow-float { box-shadow: var(--shadow-float); }
+
+.scene-3d { perspective: 1200px; transform-style: preserve-3d; }
+.preserve-3d { transform-style: preserve-3d; }
+
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease;
+}
+.tilt-card:hover {
+  transform: perspective(900px) rotateX(4deg) rotateY(-6deg) translateY(-8px);
+  box-shadow: var(--shadow-float);
+}
+
+.grid-fade {
+  background-image:
+    linear-gradient(to right, rgba(11, 42, 74, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 42, 74, 0.12) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at center, black, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 72%);
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -14px, 0); }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.animate-float { animation: float-y 6s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 26s linear infinite; }
+
