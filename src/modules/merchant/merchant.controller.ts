@@ -93,3 +93,41 @@ export async function updateStatus(
     next(error);
   }
 }
+
+export async function getCashfreeOnboardingLink(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+
+    const data = await merchantService.getCashfreeOnboardingLink(userId);
+    successResponse(res, data, "Cashfree onboarding link retrieved successfully");
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function syncCashfreeStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+
+    const data = await merchantService.syncCashfreeStatus(userId);
+    successResponse(res, data, "Cashfree status synced successfully");
+  } catch (error) {
+    next(error);
+  }
+}

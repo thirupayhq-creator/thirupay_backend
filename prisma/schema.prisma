@@ -31,6 +31,30 @@ model Merchant {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
+  // Business Profile Details
+  ownerName              String?
+  businessCategory       String?
+  entityType             String?
+  gst                    String?
+  addressLine1           String?
+  addressLine2           String?
+  pincode                String?
+  city                   String?
+  state                  String?
+  businessPhoto          String?
+
+  // Bank Account Details
+  accountHolder          String?
+  accountNumber          String?
+  ifsc                   String?
+  bankName               String?
+  branch                 String?
+  bankVerificationStatus String?  @default("PENDING")
+
+  // Cashfree Sub-merchant Integration
+  cashfreeMerchantId     String?
+  cashfreeStatus         String?
+
   IdempotencyKey IdempotencyKey[]
   kyc            KycVerification?
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -175,6 +199,24 @@ model KycVerification {
   rejectionReason   String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  // Company Identity
+  pan                       String?
+  panDocumentName           String?
+  panDocumentUrl            String?
+
+  // Identity Verification (Aadhaar, Passport, Driving Licence, Voter ID)
+  identityDocType           String?
+  identityDocNumber         String?
+  identityDocumentName      String?
+  identityDocumentUrl       String?
+
+  // Company Documents
+  numberOfDirectors         Int?
+  directorsZipName          String?
+  directorsZipUrl           String?
+  incorporationDocumentName String?
+  incorporationDocumentUrl  String?
 
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 

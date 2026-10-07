@@ -17,8 +17,18 @@ router.post(
   merchantController.onboardMerchant
 );
 
+router.post(
+  "/",
+  authenticate,
+  validateBody(onboardMerchantSchema),
+  merchantController.onboardMerchant
+);
+
+
 router.get("/profile", authenticate, merchantController.getProfile);
 router.get("/me", authenticate, merchantController.getProfile);
+router.get("/cashfree-onboarding-link", authenticate, merchantController.getCashfreeOnboardingLink);
+router.post("/cashfree-sync", authenticate, merchantController.syncCashfreeStatus);
 
 // Admin routes
 router.get("/", authenticate, authorizeAdmin, merchantController.listMerchants);

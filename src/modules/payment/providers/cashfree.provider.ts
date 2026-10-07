@@ -48,6 +48,7 @@ export class CashfreePaymentProvider implements PaymentProvider {
 
   private readonly clientId: string;
   private readonly clientSecret: string;
+  private readonly partnerApiKey: string;
   private readonly baseUrl: string;
   private readonly apiVersion: string;
   private readonly isProduction: boolean;
@@ -55,6 +56,7 @@ export class CashfreePaymentProvider implements PaymentProvider {
   constructor() {
     this.clientId = env.CASHFREE_CLIENT_ID;
     this.clientSecret = env.CASHFREE_CLIENT_SECRET;
+    this.partnerApiKey = env.CASHFREE_PARTNER_API_KEY;
     this.apiVersion = env.CASHFREE_API_VERSION;
 
     this.isProduction = env.CASHFREE_ENV === "production";
@@ -65,26 +67,40 @@ export class CashfreePaymentProvider implements PaymentProvider {
     logger.info(`Cashfree Payment Provider initialized in [${this.isProduction ? "PRODUCTION" : "SANDBOX"}] mode`);
   }
 
-  private getHeaders(): Record<string, string> {
-    if (!this.clientId || !this.clientSecret) {
-      throw new Error(
-        "Cashfree credentials missing. Please set CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET in your .env file."
-      );
-    }
-
-    return {
+  private getHeaders(merchantId?: string): Record<string, string> {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
-      "x-client-id": this.clientId,
-      "x-client-secret": this.clientSecret,
       "x-api-version": this.apiVersion,
     };
+
+    if (this.clientId && this.clientSecret) {
+      headers["x-client-id"] = this.clientId;
+      headers["x-client-secret"] = this.clientSecret;
+      return headers;
+    }
+
+    if (this.partnerApiKey) {
+      headers["x-partner-apikey"] = this.partnerApiKey;
+      if (merchantId) {
+        headers["x-partner-merchantid"] = merchantId;
+      }
+      return headers;
+    }
+
+    throw new Error(
+      "Cashfree credentials missing. Please set CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET (or CASHFREE_PARTNER_API_KEY) in your .env file."
+    );
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    merchantId?: string
+  ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = {
-      ...this.getHeaders(),
+      ...this.getHeaders(merchantId),
       ...(options.headers as Record<string, string> || {}),
     };
 
@@ -155,13 +171,19 @@ export class CashfreePaymentProvider implements PaymentProvider {
       order_note: input.note || `Order ${orderId}`,
     };
 
-    const order = await this.request<CashfreeOrderApiResponse>("/orders", {
-      method: "POST",
-      headers: {
-        "x-idempotency-key": crypto.randomUUID(),
+    const subMerchantId = (input.metadata?.subMerchantId || input.metadata?.merchantId) as string | undefined;
+
+    const order = await this.request<CashfreeOrderApiResponse>(
+      "/orders",
+      {
+        method: "POST",
+        headers: {
+          "x-idempotency-key": crypto.randomUUID(),
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+      subMerchantId
+    );
 
     return {
       providerRef: order.order_id,

@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import * as kycService from "./kyc.service";
-import { successResponse, paginatedResponse } from "../../core/utils/response";
+import { successResponse, paginatedResponse, getParam } from "../../core/utils/response";
 import { logger } from "../../core/config/logger";
+import { KycStatus } from "@prisma/client";
 
 export async function submitKyc(
   req: Request,
@@ -42,6 +43,25 @@ export async function getStatus(
   }
 }
 
+export async function getKycById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = getParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ success: false, message: "KYC ID is required" });
+      return;
+    }
+
+    const result = await kycService.getKycById(id);
+    successResponse(res, result, "KYC details fetched successfully");
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function listPending(
   req: Request,
   res: Response,
@@ -52,6 +72,23 @@ export async function listPending(
     const limit = Number(req.query.limit || 20);
 
     const result = await kycService.listPendingKyc(page, limit);
+    paginatedResponse(res, result.items, result.page, result.limit, result.total);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listAll(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const page = Number(req.query.page || 1);
+    const limit = Number(req.query.limit || 20);
+    const status = req.query.status as KycStatus | undefined;
+
+    const result = await kycService.listAllKyc(page, limit, status);
     paginatedResponse(res, result.items, result.page, result.limit, result.total);
   } catch (error) {
     next(error);
@@ -82,3 +119,4 @@ export async function verifyKyc(
     next(error);
   }
 }
+

@@ -51,7 +51,7 @@ app.use(
  */
 app.use(
   express.json({
-    limit: "2mb",
+    limit: "50mb",
     verify: (
       req: express.Request & { rawBody?: Buffer },
       _res,
@@ -65,9 +65,10 @@ app.use(
 app.use(
   express.urlencoded({
     extended: true,
-    limit: "2mb",
+    limit: "50mb",
   })
 );
+
 
 /**
  * ==========================================

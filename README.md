@@ -169,26 +169,32 @@ npm run cashfree:test
 ### Authentication (`/api/v1/auth`)
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `POST` | `/register` | Public | Register merchant user |
+| `POST` | `/register` | Public | Register merchant user (supports business, bank & KYC fields) |
+| `POST` | `/register-merchant` | Public | Full merchant registration wizard endpoint |
 | `POST` | `/login` | Public | Login & receive JWT Bearer token |
-| `GET` | `/me` | Bearer | Fetch current authenticated user & merchant |
+| `GET` | `/me` | Bearer | Fetch current user, merchant profile, and KYC status |
 
 ### Merchants (`/api/v1/merchants`)
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `POST` | `/onboard` | Bearer | Onboard merchant profile |
-| `GET` | `/me` | Bearer | Get current merchant profile |
-| `GET` | `/public/:id` | Public | Get public merchant info for checkout |
+| `POST` | `/onboard` | Bearer | Onboard/update merchant business and bank account details |
+| `POST` | `/` | Bearer | Alias for merchant onboarding |
+| `GET` | `/me` | Bearer | Get current merchant profile, bank details & KYC status |
+| `GET` | `/profile` | Bearer | Alias for merchant profile |
+| `GET` | `/public/:id` | Public | Get public merchant info for checkout / pay links |
 | `GET` | `/` | Admin | List all merchants (paginated) |
-| `PATCH`| `/:id/status`| Admin | Update merchant status (ACTIVE, SUSPENDED) |
+| `PATCH`| `/:id/status`| Admin | Update merchant status (ACTIVE, SUSPENDED, REJECTED) |
 
 ### KYC (`/api/v1/kyc`)
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `POST` | `/submit` | Bearer | Submit merchant KYC documentation |
-| `GET` | `/status` | Bearer | Get KYC verification status |
-| `GET` | `/pending` | Admin | List pending KYC verifications |
-| `POST` | `/verify` | Admin | Approve or reject KYC |
+| `POST` | `/submit` | Bearer | Submit merchant KYC documentation (PAN, Identity, Incorporation, Directors) |
+| `GET` | `/status` | Bearer | Get KYC verification status and submitted documents |
+| `GET` | `/pending` | Admin | List pending KYC verifications with merchant details |
+| `GET` | `/:id` | Admin | Get specific KYC document details by ID |
+| `GET` | `/` | Admin | List all KYC records with optional status filter |
+| `POST` | `/verify` | Admin | Approve or reject KYC verification (activates merchant) |
+
 
 ### Payments (`/api/v1/payments`)
 | Method | Endpoint | Auth | Description |

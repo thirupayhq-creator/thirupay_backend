@@ -6,11 +6,11 @@ export function verifyWebhookSignature(
   signature: string,
   timestamp: string
 ): boolean {
-  // Cashfree uses CASHFREE_WEBHOOK_SECRET, or fallback to CASHFREE_CLIENT_SECRET
+  // In test environment, use test secret; otherwise CASHFREE_WEBHOOK_SECRET or fallback to CASHFREE_CLIENT_SECRET
   const secret =
-    env.CASHFREE_WEBHOOK_SECRET ||
-    env.CASHFREE_CLIENT_SECRET ||
-    (process.env.NODE_ENV === "test" ? "tiru-pay-webhook-secret" : "");
+    process.env.NODE_ENV === "test"
+      ? (env.CASHFREE_WEBHOOK_SECRET || "tiru-pay-webhook-secret")
+      : (env.CASHFREE_WEBHOOK_SECRET || env.CASHFREE_CLIENT_SECRET || env.CASHFREE_PARTNER_API_KEY || "");
 
   if (!secret) {
     console.error(

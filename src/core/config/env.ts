@@ -50,6 +50,11 @@ export const env = {
     (cashfreeEnv === "production"
       ? "https://api.cashfree.com/pg"
       : "https://sandbox.cashfree.com/pg"),
+  CASHFREE_PARTNER_API_URL:
+    process.env.CASHFREE_PARTNER_API_URL ||
+    (cashfreeEnv === "production"
+      ? "https://api.cashfree.com/partners"
+      : "https://api-sandbox.cashfree.com/partners"),
   CASHFREE_RETURN_URL:
     process.env.CASHFREE_RETURN_URL || "http://localhost:3000/payment/success?order_id={order_id}",
   CASHFREE_WEBHOOK_URL:

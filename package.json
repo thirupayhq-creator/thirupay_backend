@@ -19,7 +19,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "cashfree:test": "tsx scripts/test-cashfree.ts"
+    "cashfree:test": "tsx scripts/test-cashfree.ts",
+    "test:merchant-flow": "tsx scripts/test-merchant-creation-flow.ts"
   },
   "dependencies": {
     "@neon/config": "^1.8.3",

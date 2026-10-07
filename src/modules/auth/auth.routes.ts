@@ -15,6 +15,14 @@ router.post(
 );
 
 router.post(
+  "/register-merchant",
+  authRateLimiter,
+  validateBody(registerSchema),
+  authController.register
+);
+
+
+router.post(
   "/login",
   authRateLimiter,
   validateBody(loginSchema),

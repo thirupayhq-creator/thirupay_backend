@@ -9,6 +9,8 @@ export interface CreatePaymentInput {
   returnUrl?: string;
   notifyUrl?: string;
   note?: string;
+  subMerchantId?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ProviderPaymentResponse {

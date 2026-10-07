@@ -8,10 +8,17 @@ export * from "./cashfree.provider";
 export * from "./mock-payment.provider";
 
 export function getPaymentProvider(): PaymentProvider {
+  if (process.env.NODE_ENV === "test") {
+    return new MockPaymentProvider();
+  }
+
   const providerName = env.PAYMENT_PROVIDER.toUpperCase();
 
   if (providerName === "CASHFREE") {
-    if (!env.CASHFREE_CLIENT_ID || !env.CASHFREE_CLIENT_SECRET) {
+    const hasMerchantCredentials = Boolean(env.CASHFREE_CLIENT_ID && env.CASHFREE_CLIENT_SECRET);
+    const hasPartnerCredentials = Boolean(env.CASHFREE_PARTNER_API_KEY);
+
+    if (!hasMerchantCredentials && !hasPartnerCredentials) {
       return new MockPaymentProvider();
     }
     return new CashfreePaymentProvider();
